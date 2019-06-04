@@ -1,0 +1,9 @@
+#!/bin/bash
+data=$(date +%Y%m%d%H%m%S)
+mkdir $data
+cd $data
+cat /etc/passwd > users.txt
+cat /etc/group > grups.txt
+sudo iptables -vL -t mangle >firewall.txt
+sudo netstat -p -l -t -n  > services.txt
+ps -aux > process.txt
