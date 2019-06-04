@@ -1,0 +1,53 @@
+#!/bin/bash
+echo "Podaj imie: "
+read imie
+echo "Podaj nazwisko: "
+read nazwisko
+echo "Witaj $imie $nazwisko"
+first_letter=$(echo $imie | cut -c 1)
+login=$(echo $first_letter$nazwisko | tr [:upper:] [:lower:] | sed 'y/ęóąśćłżź/eoasclzz/')
+login2=$login
+licznik=1
+warunek=1
+while [ $warunek -eq 1 ]
+do
+	if getent passwd $login > /dev/null 2 >&1
+	then
+		login=$(echo $login2$licznik)
+		licznik=$[licznik + 1]
+	else
+		warunek=0
+	fi
+done
+haslo="123456"
+sudo useradd -d /home/"$login" -m -g users -s /bin/bash "$login" -p $(openssl passwd -1 $haslo)
+sudo passwd -e $login
+#sudo usermod -aG user $login
+#sudo chown -R $login:user /home/$login
+#sudo chmod -R 0770 /home/$login
+#sudo chmod a-w /home/$login
+echo "alias pe='ps -e'" >> /home/"$login"/.bashrc
+cd /home/"$login"
+sudo mkdir public_html
+cd public_html
+mkdir private_html
+cd private_html
+sudo touch  /home/$login/public_html/private_html/htaccess
+sudo mv /home/$login/public_html/private_html/htaccess /home/$login/public_html/private_html/.htaccess
+#lab4
+sudo echo "AuthType Basic">> /home/$login/public_html/private_html/.htaccess
+sudo echo 'Authname "Password Protected Area"'>>/home/$login/public_html/private_html/.htaccess
+sudo echo "AuthUserFile /home/$login/.htpasswd">>/home/$login/public_html/private_html/.htaccess
+sudo echo "Require valid-user">>/home/$login/public_html/private_html/.htaccess
+sudo htpasswd -cdb /home/$login/.htpasswd $login $haslo
+#sudo htpasswd -cdb /usr/local/etc/apache/.htpasswd-users $login
+echo $login | sudo tee -a /etc/vsftpd.userlist
+
+sudo chmod a-w /home/$login/public_html
+sudo chown -R $login:user  /home/$login/public_html
+sudo chmod -R 0775 /home/$login/public_html
+
+
+sudo chmod a-w /home/$login/public_html/private_html
+sudo chown -R $login:user  /home/$login/public_html/private_html
+sudo chmod -R 0775 /home/$login/public_html/private_html
